@@ -73,6 +73,8 @@ def sssg(in_path, out_path, patterns):
 
   # name for defines and tags
   name = "SSS_" + in_path[:in_path.find('.')]
+  name = name.replace('\\', '_')
+  name = name.replace('/', '_')
 
   file_out.write("// generated with SSSG\n")
   file_out.write("#ifndef " + name + "\n")
