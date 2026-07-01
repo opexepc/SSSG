@@ -1,0 +1,116 @@
+==================================
+Simple Struct Serializer Generator
+==================================
+
+EXAMPLE:
+
+////////////////////////
+input
+\\\\\
+
+typedef struct data_t
+{
+  int count;
+  int max;
+  char key;
+  triangle3_t triangle;
+} data_t;
+
+////////////////////////////////////////////////////
+generated
+\\\\\\\\\
+
+static int SSS_read_data_t(FILE *f, data_t *s)
+{
+	if(SSS_read_i32(f, &s->count)) return 1;
+	if(SSS_read_i32(f, &s->max)) return 1;
+	if(SSS_read_i8(f, (int8_t*)&s->key)) return 1;
+	if(SSS_read_f32(f, &s->triangle.x)) return 1;
+	if(SSS_read_f32(f, &s->triangle.y)) return 1;
+	if(SSS_read_f32(f, &s->triangle.z)) return 1;
+
+	return 0;
+}
+
+static int SSS_write_data_t(FILE *f, data_t *s)
+{
+	if(SSS_write_i32(f, &s->count)) return 1;
+	if(SSS_write_i32(f, &s->max)) return 1;
+	if(SSS_write_i8(f, (int8_t*)&s->key)) return 1;
+	if(SSS_write_f32(f, &s->triangle.x)) return 1;
+	if(SSS_write_f32(f, &s->triangle.y)) return 1;
+	if(SSS_write_f32(f, &s->triangle.z)) return 1;
+
+	return 0;
+}
+////////////////////////////////////////////////////
+
+
+program for generation C struct serializer
+in files used little-endian binary format
+
+SSSG guide:
+
+1 step - set tag in input file:
+example (data.h):
+
+      // example triangle structure
+      typedef struct triangle3_t
+      {
+            float x, y, z;
+      } triangle3_t;
+
+      // this TAG:
+      // @SSSG
+      typedef struct data_t
+      {
+            int count;
+            int max;
+            char key;
+            triangle3_t triangle;
+      } data_t;
+
+2 step - write patterns:
+use syntax:
+      @s <structure field type> (patterns read since next line)
+            (if just field)
+                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name)
+            (if field is structure)
+                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_1)
+                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_2)
+                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_3)
+      @e (end tag on next line)
+
+example (patterns.txt):
+
+      # used i32 functions for int type (int can be not 4 bytes)
+      # recommended use int32_t like type with fixed size
+      @s int
+            SSS_$func_i32(f, &s->$name)
+      @e
+
+      @s triangle3_t
+            SSS_$func_f32(f, &s->$name.x)
+            SSS_$func_f32(f, &s->$name.y)
+            SSS_$func_f32(f, &s->$name.z)
+      @e
+
+      # can be used type cast
+      @s char
+            SSS_$func_i8(f, (int8_t*)&s->$name)
+      @e
+
+
+3 step - run sssg:
+$ ../sssg.py -i data.h -o SSS_data.h -p patterns.txt @i data.h @i ../sss.h
+      -i = in flag
+      -o = out flag
+      -p = pattern flag
+      @i = include flag (int example will be included "data.h" and "../sss.h") 
+
+4 step - use generated code:
+in project include out file (example #include "SSS_data.h")
+
+you can check /example folder:
+      1 run build.sh
+      2 run ./app and check like serializer work
