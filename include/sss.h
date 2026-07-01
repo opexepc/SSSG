@@ -10,8 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define SSSF_HEAD 0x53535347
-
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   #define _BIG_ENDIAN 1
 #else
@@ -93,35 +91,5 @@ static int SSS_write_f32(FILE *f, const float *x)
     return 1;
   return 0;
 }
-
-static int SSS_write_header(FILE *f)
-{
-  uint32_t head = SSSF_HEAD;
-#if _BIG_ENDIAN
-  head = SSS_swap_32__(head);
-#endif
-
-  return
-    fwrite(&head, 4, 1, f) != 1;
-}
-
-static int read_header(FILE *f)
-{
-  uint32_t head;
-
-  if(fread(&head, 4, 1, f) != 1)
-    return 1;
-
-#if _BIG_ENDIAN
-  head = SSS_swap_32__(head);
-#endif
-
-  if(head != SSSF_HEAD)
-    return 1;
-
-  return 0;
-}
-
-#undef SSSF_HEAD
 
 #endif // SSS
