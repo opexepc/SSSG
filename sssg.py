@@ -4,7 +4,6 @@ import sys
 VERSION = "0.0.1"
 
 # cmd arguments
-HELP_FLAG = "--help"
 INPUT_FLAG = "-i"
 OUTPUT_FLAG = "-o"
 PATTERNS_FLAG = "-p"
