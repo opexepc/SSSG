@@ -102,13 +102,15 @@ static int SSS_write_f32(FILE *f, const float *x)
 static int SSS_read_header(FILE *f)
 {
   int32_t header;
-  if(SSS_read_i32(f, &header) == 0)
-  {
-    return
-      header != SSS_HEADER;
-  }
+  if(SSS_read_i32(f, &header))
+    return 1;
   else
-    return SSS_BROKEN_HEADER;
+  {
+    if(header == SSS_HEADER)
+      return 0;
+    else
+      return SSS_BROKEN_HEADER;
+  }
 }
 
 static int SSS_write_header(FILE *f)
