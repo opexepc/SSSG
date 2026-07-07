@@ -10,6 +10,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#define SSS_HEADER 53535347
+#define SSS_BROKEN_HEADER -1
+#define SSS_FAIL 1
+#define SSS_OK   0
+
+#define SSS_BROKEN_VERSION 120
+
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   #define _BIG_ENDIAN 1
 #else
@@ -90,6 +97,24 @@ static int SSS_write_f32(FILE *f, const float *x)
   if(fwrite(&tmp, 4, 1, f) != 1)
     return 1;
   return 0;
+}
+
+static int SSS_read_header(FILE *f)
+{
+  int32_t header;
+  if(SSS_read_i32(f, &header) == 0)
+  {
+    return
+      header != SSS_HEADER;
+  }
+  else
+    return SSS_BROKEN_HEADER;
+}
+
+static int SSS_write_header(FILE *f)
+{
+  return
+    SSS_write_i32(f, (int32_t*)SSS_HEADER);
 }
 
 #endif // SSS

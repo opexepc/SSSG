@@ -51,9 +51,17 @@ def get_patterns(in_path):
   return pts
 
 # write function on sample
-def gen_func(file_out, func_name, struct_name, fields, patterns):
+def gen_func(file_out, func_name, struct_name, version, fields, patterns):
   # function declaration
   file_out.write("\nstatic int SSS_" + func_name +"_" + struct_name + "(FILE *f, " + struct_name + " *s)\n{\n")
+  file_out.write("\tconst int version = " + str(version) + ";\n")
+
+  if func_name == "write":
+    file_out.write("\tif(SSS_write_i32(f, &version)) return 1;\n\n")
+  elif func_name == "read":
+    file_out.write("\tint new_version;\n\n")
+    file_out.write("\tif(SSS_read_i32(f, &new_version)) return 1;\n")
+    file_out.write("\tif(new_version != version)\n\t\treturn SSS_BROKEN_VERSION;\n\n")
 
   # write all founded structure fields to patterns
   for field in fields:
@@ -88,6 +96,7 @@ def sssg(in_path, out_path, patterns):
   in_struct = 0
   declarated = 0
   struct_name = ""
+  version = -1
   # fields for function generator
   fields = []
 
@@ -111,13 +120,23 @@ def sssg(in_path, out_path, patterns):
 
       # find end of structure
       if '}' in line:
-        gen_func(file_out, "read", struct_name, fields, patterns)
-        gen_func(file_out, "write", struct_name, fields, patterns)
+        if version == -1:
+          print("set version")
+          break
+
+        gen_func(file_out, "read", struct_name, version, fields, patterns)
+        gen_func(file_out, "write", struct_name, version, fields, patterns)
         fields = []
         in_struct = 0
+        version = -1
 
     # find SSSG tag
     if SSSG_TAG in line:
+      version = int(line[line.find('[') + 1: line.find(']')])
+      if version < 0:
+        print("set unsigned version")
+        break;
+        
       in_struct = 1
 
   file_out.write("\n#endif // " + name)

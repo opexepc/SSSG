@@ -51,7 +51,8 @@ in files used little-endian binary format
 
 SSSG guide:
 
-1 step - set tag in input file:
+1 step - set tag and version in input file:
+*always use unsigned version
 example (data.h):
 
       // example triangle structure
@@ -61,7 +62,7 @@ example (data.h):
       } triangle3_t;
 
       // this TAG:
-      // @SSSG
+      // @SSSG [1]
       typedef struct data_t
       {
             int count;
