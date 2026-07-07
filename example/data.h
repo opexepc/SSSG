@@ -10,7 +10,7 @@ typedef struct triangle3_t
 } triangle3_t;
 
 // use tag
-// @SSSG
+// @SSSG [1]
 typedef struct data_t
 {
   int count;
