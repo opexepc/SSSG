@@ -132,7 +132,14 @@ def sssg(in_path, out_path, patterns):
 
     # find SSSG tag
     if SSSG_TAG in line:
-      version = int(line[line.find('[') + 1: line.find(']')])
+      from_ver = line.find('[') + 1
+      to_ver = line.find(']')
+
+      if from_ver == 0 or to_ver == -1:
+        print("set correct version in file " + in_path)
+        break
+
+      version = int(line[from_ver : to_ver])
       if version < 0:
         print("set unsigned version")
         break;
