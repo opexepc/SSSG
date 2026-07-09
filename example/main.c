@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   if(!f_in)
     data = def_data;
   else
-    SSS_read_data_t(f_in, &data);
+    SSS_read_data_t(f_in, &data, NULL);
 
   // print structure
   print_data(&data);
