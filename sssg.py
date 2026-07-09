@@ -53,15 +53,15 @@ def get_patterns(in_path):
 # write function on sample
 def gen_func(file_out, func_name, struct_name, version, fields, patterns):
   # function declaration
-  file_out.write("\nstatic int SSS_" + func_name +"_" + struct_name + "(FILE *f, " + struct_name + " *s)\n{\n")
-  file_out.write("\tconst int version = " + str(version) + ";\n")
+  file_out.write("\nstatic int SSS_" + func_name +"_" + struct_name + "(FILE *f, " + struct_name + " *s, int *version)\n{\n")
+  file_out.write("\tconst int __version = " + str(version) + ";\n")
 
   if func_name == "write":
-    file_out.write("\tif(SSS_write_i32(f, &version)) return 1;\n\n")
+    file_out.write("\tif(SSS_write_i32(f, &__version)) return 1;\n\n")
   elif func_name == "read":
     file_out.write("\tint new_version;\n\n")
     file_out.write("\tif(SSS_read_i32(f, &new_version)) return 1;\n")
-    file_out.write("\tif(new_version != version)\n\t\treturn SSS_BROKEN_VERSION;\n\n")
+    file_out.write("\tif(new_version != __version)\n\t{\n\t\tif(version)\n\t\t\t*version = new_version;\n\t\treturn SSS_BROKEN_VERSION;\n\t}\n\n")
 
   # write all founded structure fields to patterns
   for field in fields:
