@@ -51,7 +51,7 @@ in files used little-endian binary format
 
 SSSG guide:
 
-1 step - set tag and version in input file:
+1 step - set @SSSG tag and version in input file (and @SIZE tag + [<size>] if used array):
 *always use unsigned version
 example (data.h):
 
@@ -61,7 +61,7 @@ example (data.h):
             float x, y, z;
       } triangle3_t;
 
-      // this TAG:
+      // use tag
       // @SSSG [1]
       typedef struct data_t
       {
@@ -69,6 +69,18 @@ example (data.h):
             int max;
             char key;
             triangle3_t triangle;
+
+            triangle3_t triangles[10];
+            int fixed_size_arr[32];
+
+            // set size variable before array !!
+            int size;
+
+            // if it is array use tag and size
+            int* dynamic_size_arr; // @SIZE [s->size]
+
+            // if it is NOT array (just pointer to value) not use tag
+            int *pointer_to_value;
       } data_t;
 
 2 step - write patterns:
@@ -103,11 +115,12 @@ example (patterns.txt):
 
 
 3 step - run sssg:
-$ ../sssg.py -i data.h -o SSS_data.h -p patterns.txt @i data.h @i ../sss.h
+$ ../sssg.py -i data.h -o SSS_data.h -p patterns.txt @i data.h @i ../sss.h @s 10000000
       -i = in flag
       -o = out flag
       -p = pattern flag
-      @i = include flag (int example will be included "data.h" and "../sss.h") 
+      @i = include flag (in example will be included "data.h" and "../sss.h")
+      @s = max allocation size (for pointers and arrays) for 1 allocation (in example will set limit ~9.5 Mb)
 
 4 step - use generated code:
 in project include out file (example #include "SSS_data.h")
@@ -115,3 +128,133 @@ in project include out file (example #include "SSS_data.h")
 you can check /example folder:
       1 run build.sh
       2 run ./app and check like serializer work
+
+
+UPDATE version 0.0.2
+      add arrays support:
+            1. fixed size array (example: int arr[10]; )
+            2. dynamic_size_array (example: int *arr; )
+      add pointers support (not recommended for use):
+            1. example: int *ptr;
+
+      array VS pointer:
+            just use rule:
+            array -> use @SIZE [<size>] in one line
+            pointer -> not use any tags
+
+      OUT EXAMPLE (generated):
+
+      static int SSS_read_data_t(FILE *f, data_t *s, int *version)
+      {
+            const int __version = 1;
+            int new_version;
+
+            if(SSS_read_i32(f, &new_version)) return 1;
+            if(new_version != __version)
+            {
+                  if(version)
+                        *version = new_version;
+                  return SSS_BROKEN_VERSION;
+            }
+
+            size_t __size = 0;
+            memset(s, 0, sizeof(data_t));
+
+            if(SSS_read_i32(f, &s->count)) goto fail;
+            if(SSS_read_i32(f, &s->max)) goto fail;
+            if(SSS_read_i8(f, (int8_t*)&s->key)) goto fail;
+            if(SSS_read_f32(f, &s->triangle.x)) goto fail;
+            if(SSS_read_f32(f, &s->triangle.y)) goto fail;
+            if(SSS_read_f32(f, &s->triangle.z)) goto fail;
+
+            for(int i = 0; i < 10; ++i)
+            {
+                  if(SSS_read_f32(f, &s->triangles[i].x)) goto fail;
+                  if(SSS_read_f32(f, &s->triangles[i].y)) goto fail;
+                  if(SSS_read_f32(f, &s->triangles[i].z)) goto fail;
+            }
+
+            for(int i = 0; i < 32; ++i)
+            {
+                  if(SSS_read_i32(f, &s->fixed_size_arr[i])) goto fail;
+            }
+            if(SSS_read_i32(f, &s->size)) goto fail;
+
+            if(s->size < 0) goto fail;
+            __size = sizeof(int) * s->size;
+            if(__size > 100000000)
+                  goto fail;
+            s->dynamic_size_arr = (int*)malloc(__size);
+            if(!s->dynamic_size_arr) goto fail;
+
+            for(int i = 0; i < s->size; ++i)
+            {
+                  if(SSS_read_i32(f, &s->dynamic_size_arr[i])) goto fail;
+            }
+
+            if(1 < 0) goto fail;
+            __size = sizeof(int) * 1;
+            if(__size > 100000000)
+                  goto fail;
+            s->pointer_to_value = (int*)malloc(__size);
+            if(!s->pointer_to_value) goto fail;
+            if(SSS_read_i32(f, s->pointer_to_value)) goto fail;
+
+            goto success;
+
+      fail:
+            if(s->dynamic_size_arr)
+            {
+                  free(s->dynamic_size_arr);
+                  s->dynamic_size_arr = NULL;
+            }
+            if(s->pointer_to_value)
+            {
+                  free(s->pointer_to_value);
+                  s->pointer_to_value = NULL;
+            }
+            return 1;
+
+      success:
+            return 0;
+      }
+
+      static int SSS_write_data_t(FILE *f, data_t *s)
+      {
+            const int __version = 1;
+            if(SSS_write_i32(f, &__version)) return 1;
+
+            if(SSS_write_i32(f, &s->count)) goto fail;
+            if(SSS_write_i32(f, &s->max)) goto fail;
+            if(SSS_write_i8(f, (int8_t*)&s->key)) goto fail;
+            if(SSS_write_f32(f, &s->triangle.x)) goto fail;
+            if(SSS_write_f32(f, &s->triangle.y)) goto fail;
+            if(SSS_write_f32(f, &s->triangle.z)) goto fail;
+
+            for(int i = 0; i < 10; ++i)
+            {
+                  if(SSS_write_f32(f, &s->triangles[i].x)) goto fail;
+                  if(SSS_write_f32(f, &s->triangles[i].y)) goto fail;
+                  if(SSS_write_f32(f, &s->triangles[i].z)) goto fail;
+            }
+
+            for(int i = 0; i < 32; ++i)
+            {
+                  if(SSS_write_i32(f, &s->fixed_size_arr[i])) goto fail;
+            }
+            if(SSS_write_i32(f, &s->size)) goto fail;
+
+            for(int i = 0; i < s->size; ++i)
+            {
+                  if(SSS_write_i32(f, &s->dynamic_size_arr[i])) goto fail;
+            }
+            if(SSS_write_i32(f, s->pointer_to_value)) goto fail;
+
+            goto success;
+
+      fail:
+            return 1;
+
+      success:
+            return 0;
+      }

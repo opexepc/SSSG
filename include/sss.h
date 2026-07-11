@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define SSS_HEADER 53535347
 #define SSS_BROKEN_HEADER -1
