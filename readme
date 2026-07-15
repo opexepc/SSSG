@@ -13,7 +13,6 @@ typedef struct data_t
   int count;
   int max;
   char key;
-  triangle3_t triangle;
 } data_t;
 
 ////////////////////////////////////////////////////
@@ -25,9 +24,6 @@ static int SSS_read_data_t(FILE *f, data_t *s)
 	if(SSS_read_i32(f, &s->count)) return 1;
 	if(SSS_read_i32(f, &s->max)) return 1;
 	if(SSS_read_i8(f, (int8_t*)&s->key)) return 1;
-	if(SSS_read_f32(f, &s->triangle.x)) return 1;
-	if(SSS_read_f32(f, &s->triangle.y)) return 1;
-	if(SSS_read_f32(f, &s->triangle.z)) return 1;
 
 	return 0;
 }
@@ -37,9 +33,6 @@ static int SSS_write_data_t(FILE *f, data_t *s)
 	if(SSS_write_i32(f, &s->count)) return 1;
 	if(SSS_write_i32(f, &s->max)) return 1;
 	if(SSS_write_i8(f, (int8_t*)&s->key)) return 1;
-	if(SSS_write_f32(f, &s->triangle.x)) return 1;
-	if(SSS_write_f32(f, &s->triangle.y)) return 1;
-	if(SSS_write_f32(f, &s->triangle.z)) return 1;
 
 	return 0;
 }
@@ -56,9 +49,12 @@ SSSG guide:
 example (data.h):
 
       // example triangle structure
+      // @SSSG [1]
       typedef struct triangle3_t
       {
-            float x, y, z;
+            float x;
+            float y;
+            float z;
       } triangle3_t;
 
       // use tag
@@ -71,6 +67,7 @@ example (data.h):
             triangle3_t triangle;
 
             triangle3_t triangles[10];
+
             int fixed_size_arr[32];
 
             // set size variable before array !!
@@ -78,20 +75,29 @@ example (data.h):
 
             // if it is array use tag and size
             int* dynamic_size_arr; // @SIZE [s->size]
-
+            
             // if it is NOT array (just pointer to value) not use tag
             int *pointer_to_value;
+
+            // dynamic structure support
+            int tri_count;
+            triangle3_t *dynamic_tris; // @SIZE [s->tri_count]
+
+            triangle3_t *just_tri_pointer;
       } data_t;
 
 2 step - write patterns:
+recommended use patterns for simple types !!!
+if 
 use syntax:
       @s <structure field type> (patterns read since next line)
             (if just field)
                   SSS_$func_<value type, check sss.h from includes>(f, &s->$name)
-            (if field is structure)
-                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_1)
-                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_2)
-                  SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_3)
+
+            # no recommended - (if field is structure), check UPDATE 0.0.3!
+                  #SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_1)
+                  #SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_2)
+                  #SSS_$func_<value type, check sss.h from includes>(f, &s->$name.subfield_3)
       @e (end tag on next line)
 
 example (patterns.txt):
@@ -102,11 +108,12 @@ example (patterns.txt):
             SSS_$func_i32(f, &s->$name)
       @e
 
-      @s triangle3_t
-            SSS_$func_f32(f, &s->$name.x)
-            SSS_$func_f32(f, &s->$name.y)
-            SSS_$func_f32(f, &s->$name.z)
-      @e
+      # no recommended since UPDATE 0.0.3
+      #@s triangle3_t
+      #      SSS_$func_f32(f, &s->$name.x)
+      #      SSS_$func_f32(f, &s->$name.y)
+      #      SSS_$func_f32(f, &s->$name.z)
+      #@e
 
       # can be used type cast
       @s char
@@ -142,119 +149,13 @@ UPDATE version 0.0.2
             array -> use @SIZE [<size>] in one line
             pointer -> not use any tags
 
-      OUT EXAMPLE (generated):
-
-      static int SSS_read_data_t(FILE *f, data_t *s, int *version)
-      {
-            const int __version = 1;
-            int new_version;
-
-            if(SSS_read_i32(f, &new_version)) return 1;
-            if(new_version != __version)
-            {
-                  if(version)
-                        *version = new_version;
-                  return SSS_BROKEN_VERSION;
-            }
-
-            size_t __size = 0;
-            memset(s, 0, sizeof(data_t));
-
-            if(SSS_read_i32(f, &s->count)) goto fail;
-            if(SSS_read_i32(f, &s->max)) goto fail;
-            if(SSS_read_i8(f, (int8_t*)&s->key)) goto fail;
-            if(SSS_read_f32(f, &s->triangle.x)) goto fail;
-            if(SSS_read_f32(f, &s->triangle.y)) goto fail;
-            if(SSS_read_f32(f, &s->triangle.z)) goto fail;
-
-            for(int i = 0; i < 10; ++i)
-            {
-                  if(SSS_read_f32(f, &s->triangles[i].x)) goto fail;
-                  if(SSS_read_f32(f, &s->triangles[i].y)) goto fail;
-                  if(SSS_read_f32(f, &s->triangles[i].z)) goto fail;
-            }
-
-            for(int i = 0; i < 32; ++i)
-            {
-                  if(SSS_read_i32(f, &s->fixed_size_arr[i])) goto fail;
-            }
-            if(SSS_read_i32(f, &s->size)) goto fail;
-
-            if(s->size < 0) goto fail;
-            __size = sizeof(int) * s->size;
-            if(__size > 100000000)
-                  goto fail;
-            s->dynamic_size_arr = (int*)malloc(__size);
-            if(!s->dynamic_size_arr) goto fail;
-
-            for(int i = 0; i < s->size; ++i)
-            {
-                  if(SSS_read_i32(f, &s->dynamic_size_arr[i])) goto fail;
-            }
-
-            if(1 < 0) goto fail;
-            __size = sizeof(int) * 1;
-            if(__size > 100000000)
-                  goto fail;
-            s->pointer_to_value = (int*)malloc(__size);
-            if(!s->pointer_to_value) goto fail;
-            if(SSS_read_i32(f, s->pointer_to_value)) goto fail;
-
-            goto success;
-
-      fail:
-            if(s->dynamic_size_arr)
-            {
-                  free(s->dynamic_size_arr);
-                  s->dynamic_size_arr = NULL;
-            }
-            if(s->pointer_to_value)
-            {
-                  free(s->pointer_to_value);
-                  s->pointer_to_value = NULL;
-            }
-            return 1;
-
-      success:
-            return 0;
-      }
-
-      static int SSS_write_data_t(FILE *f, data_t *s)
-      {
-            const int __version = 1;
-            if(SSS_write_i32(f, &__version)) return 1;
-
-            if(SSS_write_i32(f, &s->count)) goto fail;
-            if(SSS_write_i32(f, &s->max)) goto fail;
-            if(SSS_write_i8(f, (int8_t*)&s->key)) goto fail;
-            if(SSS_write_f32(f, &s->triangle.x)) goto fail;
-            if(SSS_write_f32(f, &s->triangle.y)) goto fail;
-            if(SSS_write_f32(f, &s->triangle.z)) goto fail;
-
-            for(int i = 0; i < 10; ++i)
-            {
-                  if(SSS_write_f32(f, &s->triangles[i].x)) goto fail;
-                  if(SSS_write_f32(f, &s->triangles[i].y)) goto fail;
-                  if(SSS_write_f32(f, &s->triangles[i].z)) goto fail;
-            }
-
-            for(int i = 0; i < 32; ++i)
-            {
-                  if(SSS_write_i32(f, &s->fixed_size_arr[i])) goto fail;
-            }
-            if(SSS_write_i32(f, &s->size)) goto fail;
-
-            for(int i = 0; i < s->size; ++i)
-            {
-                  if(SSS_write_i32(f, &s->dynamic_size_arr[i])) goto fail;
-            }
-            if(SSS_write_i32(f, s->pointer_to_value)) goto fail;
-
-            goto success;
-
-      fail:
-            return 1;
-
-      success:
-            return 0;
-      }
+UPDATE version 0.0.3
+      add structure in structure support:
+            1. example: triangle3_t triangle;
+                  will be changed to SSS_$func_triangle3_t(f, s->$name)
+                  like other patterns
+                  ! but if you write the pattern for triangle3_t (like type)
+                  will be used this pattern
+      since this update:
+            recommended use patterns for simple types (int, int8_t, float)
+            for structures better use auto pattern generator

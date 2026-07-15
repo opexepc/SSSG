@@ -34,6 +34,7 @@ typedef struct data_t
   // if it is NOT array (just pointer to value) not use tag
   int *pointer_to_value;
 
+  // dynamic structure support
   int tri_count;
   triangle3_t *dynamic_tris; // @SIZE [s->tri_count]
 
