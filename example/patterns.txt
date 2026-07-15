@@ -2,11 +2,15 @@
   SSS_$func_i32(f, &s->$name)
   @e
 
-@s triangle3_t
-  SSS_$func_f32(f, &s->$name.x)
-  SSS_$func_f32(f, &s->$name.y)
-  SSS_$func_f32(f, &s->$name.z)
+@s float
+  SSS_$func_f32(f, &s->$name)
   @e
+
+#@s triangle3_t
+#  SSS_$func_f32(f, &s->$name.x)
+#  SSS_$func_f32(f, &s->$name.y)
+#  SSS_$func_f32(f, &s->$name.z)
+#  @e
 
 # can be used type cast
 @s char

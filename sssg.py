@@ -1,7 +1,7 @@
 # SSS Genegator
 import sys
 
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 
 # cmd arguments
 INPUT_FLAG = "-i"
@@ -87,7 +87,11 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
   for field in fields:
     condition = field[2]
     condition = condition.replace("$func", func_name)
-    condition = condition.replace("$name", field[1])
+    
+    if func_name == "read" and field[4]:
+      condition = condition.replace("$name", field[1] + ", NULL")
+    else:
+      condition = condition.replace("$name", field[1])
 
     value_type = 0
     var_type = field[0]
@@ -125,15 +129,12 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
     if value_type == 2:
       file_out.write("\t}\n")
 
-  file_out.write("\n\tgoto success;\n\n")
+  file_out.write("\n\treturn 0;\n\n")
 
   file_out.write("fail:\n")
   for i in need_free:
     file_out.write("\tif(s->" + i + ")\n\t{\n\t\tfree(s->" + i + ");\n\t\ts->" + i + " = NULL;\n\t}\n")
-  file_out.write("\treturn 1;\n")
-
-  file_out.write("\nsuccess:\n")
-  file_out.write("\treturn 0;\n}\n")
+  file_out.write("\treturn 1;\n}\n")
 
 def sssg(in_path, out_path, patterns):
   file_in = open(in_path, "r")
@@ -174,31 +175,49 @@ def sssg(in_path, out_path, patterns):
 
       # collect structure fields
       if len(tokens) > 1:
-        for ptn in patterns:
+        var_type = ""
+        var_name = ""
+        var_size = ""
+        var_value = ""
+        found_ptn = 0
+        var_is_struct = 0
 
+        var_name = tokens[1][:-1].replace('*', "")
+
+        for ptn in patterns:
           var_type = tokens[0][:len(ptn[0])]
           if ptn[0] == var_type:
-            
-            var_name = tokens[1][:-1].replace('*', "")
-            var_size = ""
+            found_ptn = 1
+            var_value = ptn[1]
+            break
 
-            from_size = line.find('[') + 1
-            to_size = line.find(']')
+        if found_ptn == 0:
+          var_type = tokens[0]
+          if var_type not in ["typedef", "}", "{", "//"]:
+            var_is_struct = 1
+            var_value = "SSS_$func_" + var_type + "(f, &s->$name)"
+            found_ptn = 1
 
-            if line.count('[') != line.count(']'):
-              print("set correct size in line: " + line)
-              return
+        if found_ptn:
+          var_size = ""
 
-            if '*' in line:
-              var_size = "*"
+          from_size = line.find('[') + 1
+          to_size = line.find(']')
 
-            if from_size != 0 and to_size != -1:
-              var_name = var_name.split('[')[0]
+          if line.count('[') != line.count(']'):
+            print("set correct size in line: " + line)
+            return
 
-              if ('*' in line and "@SIZE" in line) or ('*' not in line):
-                var_size = line[from_size : to_size]
+          if '*' in line:
+            var_size = "*"
 
-            fields.append([var_type, var_name, ptn[1], var_size])
+          if from_size != 0 and to_size != -1:
+            var_name = var_name.split('[')[0]
+
+            if ('*' in line and "@SIZE" in line) or ('*' not in line):
+              var_size = line[from_size : to_size]
+
+          fields.append([var_type, var_name, var_value, var_size, var_is_struct])
 
       # find end of structure
       if '}' in line:

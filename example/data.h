@@ -4,9 +4,12 @@
 #include <stdio.h>
 
 // example triangle structure
+// @SSSG [1]
 typedef struct triangle3_t
 {
-  float x, y, z;
+  float x;
+  float y;
+  float z;
 } triangle3_t;
 
 // use tag
@@ -19,6 +22,7 @@ typedef struct data_t
   triangle3_t triangle;
 
   triangle3_t triangles[10];
+
   int fixed_size_arr[32];
 
   // set size variable before array !!
@@ -29,6 +33,11 @@ typedef struct data_t
   
   // if it is NOT array (just pointer to value) not use tag
   int *pointer_to_value;
+
+  int tri_count;
+  triangle3_t *dynamic_tris; // @SIZE [s->tri_count]
+
+  triangle3_t *just_tri_pointer;
 } data_t;
 
 #endif // DATA  
