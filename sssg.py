@@ -118,7 +118,7 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
           need_free.append(var_name)
 
       file_out.write("\n\tfor(int i = 0; i < " + var_size + "; ++i)\n\t{\n")
-      condition = condition.replace(field[1], field[1] + "[i]")
+      condition = condition.replace("->" + field[1], "->" + field[1] + "[i]")
 
     conditions = list(map(str.strip, condition.split('\n')))
     for cds in conditions:
