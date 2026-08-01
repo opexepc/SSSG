@@ -1,7 +1,7 @@
 # SSS Genegator
 import sys
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 # cmd arguments
 INPUT_FLAG = "-i"
@@ -53,12 +53,24 @@ def get_patterns(in_path):
   
   return pts
 
-def gen_allocator(file_out, type, name, count):
-  file_out.write("\n\tif(" + count + " < 0) goto fail;\n")
-  file_out.write("\t__size = sizeof(" + type + ") * " + count + ";\n")
+def gen_allocator(file_out, type, name, var_sizes):
+  if len(var_sizes) > 1:
+    file_out.write("\n\tif(" + var_sizes[0] + " < 0 || " + var_sizes[1] + " < 0)\n\t\tgoto fail;\n")
+  else:
+    file_out.write("\n\tif(" + var_sizes[0] + " < 0)\n\t\tgoto fail;\n")
+
+  line = ""
+  if len(var_sizes) > 1:
+    line = "\t__size = sizeof(" + type + ") * " + var_sizes[0].strip() + " * " + var_sizes[1].strip() + ";\n"
+  else:
+    line = "\t__size = sizeof(" + type + ") * " + var_sizes[0].strip() + ";\n"
+
+  line = line.replace(" sizeof(void) *", "")
+  file_out.write(line)
+
   file_out.write("\tif(__size > " + max_allocation_size + ")\n\t\tgoto fail;\n")
   file_out.write("\ts->" + name + " = (" + type + "*)malloc(__size);\n")
-  file_out.write("\tif(!s->" + name + ") goto fail;\n")
+  file_out.write("\tif(!s->" + name + ")\n\t\tgoto fail;\n")
 
 def gen_version_check(file_out):
   file_out.write("\tint new_version;\n\n")
@@ -76,7 +88,7 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
   file_out.write("\tconst int __version = " + str(version) + ";\n")
 
   if func_name == "write":
-    file_out.write("\tif(SSS_write_i32(f, &__version)) return 1;\n\n")
+    file_out.write("\tif(SSS_write_i32(f, &__version))\n\t\treturn 1;\n\n")
   elif func_name == "read":
     gen_version_check(file_out)
     file_out.write("\tsize_t __size = 0;\n")
@@ -112,13 +124,23 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
     # if need loop
     elif value_type == 2:
 
-      if not(var_size.isdigit()):
+      if not(var_size[0].isdigit()):
         if func_name == "read":
           gen_allocator(file_out, var_type, var_name, var_size)
           need_free.append(var_name)
 
-      file_out.write("\n\tfor(int i = 0; i < " + var_size + "; ++i)\n\t{\n")
-      condition = condition.replace("->" + field[1], "->" + field[1] + "[i]")
+      if len(var_size) > 1:
+        file_out.write("\n\tfor(size_t i = 0; i < " + var_size[0].strip() + " * " + var_size[1].strip() + "; ++i)\n\t{\n")
+      else:
+        file_out.write("\n\tfor(size_t i = 0; i < " + var_size[0] + "; ++i)\n\t{\n")
+      # if condition.count(')') < 2:
+      #   condition = condition.replace("->" + field[1], "->" + field[1] + "[i]")
+      # else:
+      #   condition = condition.replace("))", ")[i])")
+      condition += "[i]"
+      condition = condition.replace(")[i]", "[i])")
+
+      condition = condition.replace(", NULL[i]", "[i], NULL")
 
     conditions = list(map(str.strip, condition.split('\n')))
     for cds in conditions:
@@ -216,6 +238,7 @@ def sssg(in_path, out_path, patterns):
 
             if ('*' in line and "@SIZE" in line) or ('*' not in line):
               var_size = line[from_size : to_size]
+              var_size = var_size.split('|')
 
           fields.append([var_type, var_name, var_value, var_size, var_is_struct])
 

@@ -84,6 +84,10 @@ example (data.h):
             triangle3_t *dynamic_tris; // @SIZE [s->tri_count]
 
             triangle3_t *just_tri_pointer;
+
+            arr_t *container; // if used a lot of arrays
+
+            char text[128];
       } data_t;
 
 2 step - write patterns:
@@ -105,20 +109,30 @@ example (patterns.txt):
       # used i32 functions for int type (int can be not 4 bytes)
       # recommended use int32_t like type with fixed size
       @s int
-            SSS_$func_i32(f, &s->$name)
-      @e
+      SSS_$func_i32(f, &s->$name)
+            @e
 
-      # no recommended since UPDATE 0.0.3
+      @s float
+      SSS_$func_f32(f, &s->$name)
+            @e
+
       #@s triangle3_t
-      #      SSS_$func_f32(f, &s->$name.x)
-      #      SSS_$func_f32(f, &s->$name.y)
-      #      SSS_$func_f32(f, &s->$name.z)
-      #@e
+      #  SSS_$func_f32(f, &s->$name.x)
+      #  SSS_$func_f32(f, &s->$name.y)
+      #  SSS_$func_f32(f, &s->$name.z)
+      #  @e
 
       # can be used type cast
       @s char
-            SSS_$func_i8(f, (int8_t*)&s->$name)
-      @e
+      SSS_$func_i8(f, (int8_t*)&s->$name)
+            @e
+
+      # use this pattern for void !!
+      @s void
+      SSS_$func_i8(f, &((int8_t*)s->$name))
+            @e
+
+
 
 
 3 step - run sssg:
@@ -159,3 +173,9 @@ UPDATE version 0.0.3
       since this update:
             recommended use patterns for simple types (int, int8_t, float)
             for structures better use auto pattern generator
+
+UPDATE version 0.0.4
+      add void type pointer handler and any array sizes:
+            1. example: void *arr; // @SIZE[count | element_size]
+                  use '|' for separate sizes
+            2. use special pattern for void type

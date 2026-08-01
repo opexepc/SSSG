@@ -16,3 +16,7 @@
 @s char
   SSS_$func_i8(f, (int8_t*)&s->$name)
   @e
+
+@s void
+  SSS_$func_i8(f, &((int8_t*)s->$name))
+  @e

@@ -2,6 +2,7 @@
 #define DATA
 
 #include <stdio.h>
+#include "arr.h"
 
 // example triangle structure
 // @SSSG [1]
@@ -39,6 +40,10 @@ typedef struct data_t
   triangle3_t *dynamic_tris; // @SIZE [s->tri_count]
 
   triangle3_t *just_tri_pointer;
+
+  arr_t *container; // if used a lot of arrays
+
+  char text[128];
 } data_t;
 
-#endif // DATA  
+#endif // DATA
