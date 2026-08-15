@@ -20,7 +20,7 @@ typedef struct data_t
   int count;
   int max;
   char key;
-  triangle3_t triangle;
+  struct triangle3_t triangle;
 
   triangle3_t triangles[10];
 
@@ -44,6 +44,9 @@ typedef struct data_t
   arr_t *container; // if used a lot of arrays
 
   char text[128];
+
+  // you can skip any fields
+  int *specific_field; // @SKIP
 } data_t;
 
 #endif // DATA

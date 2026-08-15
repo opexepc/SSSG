@@ -1,7 +1,7 @@
 # SSS Genegator
 import sys
 
-VERSION = "0.0.4"
+VERSION = "0.0.4.1"
 
 # cmd arguments
 INPUT_FLAG = "-i"
@@ -184,9 +184,14 @@ def sssg(in_path, out_path, patterns):
   fields = []
 
   for line in file_in:
+    line = line.replace("struct", "")
+
     tokens = line.split()
 
     if in_struct:
+
+      if "@SKIP" in line:
+        continue
 
       # find structure name
       if "typedef" in line:

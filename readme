@@ -179,3 +179,10 @@ UPDATE version 0.0.4
             1. example: void *arr; // @SIZE[count | element_size]
                   use '|' for separate sizes
             2. use special pattern for void type
+
+UPDATE version 0.0.4.1
+      add @SKIP tag and struct keyword handler
+            1. example: int *specific_field; // @SKIP
+                  field will be just skipped
+            2. example: struct triangle3_t triangle;
+                  since you can write "struct before field type"
