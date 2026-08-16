@@ -186,3 +186,8 @@ UPDATE version 0.0.4.1
                   field will be just skipped
             2. example: struct triangle3_t triangle;
                   since you can write "struct before field type"
+
+UPDATE version 0.0.4.2
+      1. remove memset construction
+            memset(s, 0, sizeof("struct_name"));
+            

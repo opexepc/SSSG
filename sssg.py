@@ -1,7 +1,7 @@
 # SSS Genegator
 import sys
 
-VERSION = "0.0.4.1"
+VERSION = "0.0.4.2"
 
 # cmd arguments
 INPUT_FLAG = "-i"
@@ -91,8 +91,8 @@ def gen_func(file_out, func_name, struct_name, version, fields, patterns):
     file_out.write("\tif(SSS_write_i32(f, &__version))\n\t\treturn 1;\n\n")
   elif func_name == "read":
     gen_version_check(file_out)
-    file_out.write("\tsize_t __size = 0;\n")
-    file_out.write("\tmemset(s, 0, sizeof(" + struct_name + "));\n\n")
+    file_out.write("\tsize_t __size = 0;\n\n")
+    # file_out.write("\tmemset(s, 0, sizeof(" + struct_name + "));\n\n")
 
   need_free = []
   # write all founded structure fields to patterns
