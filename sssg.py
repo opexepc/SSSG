@@ -163,7 +163,7 @@ def sssg(in_path, out_path, patterns):
   file_out = open(out_path, "w")
 
   # name for defines and tags
-  name = "SSS_" + in_path[in_path.find('/') + 1 : in_path.find('.')]
+  name = "SSS_" + in_path.split("/")[-1].split(".")[0]
   name = name.replace('\\', '_')
   name = name.replace('/', '_')
 
