@@ -1,7 +1,7 @@
 # SSS Genegator
 import sys
 
-VERSION = "0.0.4.2"
+VERSION = "0.0.4.3"
 
 # cmd arguments
 INPUT_FLAG = "-i"
@@ -163,7 +163,7 @@ def sssg(in_path, out_path, patterns):
   file_out = open(out_path, "w")
 
   # name for defines and tags
-  name = "SSS_" + in_path[:in_path.find('.')]
+  name = "SSS_" + in_path[in_path.find('/') + 1 : in_path.find('.')]
   name = name.replace('\\', '_')
   name = name.replace('/', '_')
 
